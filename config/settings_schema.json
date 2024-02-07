@@ -1,7 +1,7 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "Dawn",
+    "theme_name": "Customized Dawn by Coldx",
     "theme_version": "13.0.0",
     "theme_author": "Shopify",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
@@ -492,7 +492,7 @@
       {
         "type": "select",
         "id": "card_style",
-        "options": [
+        "options": [ 
           {
             "value": "standard",
             "label": "t:settings_schema.cards.settings.style.options__1.label"

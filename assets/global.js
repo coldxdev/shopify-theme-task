@@ -361,8 +361,7 @@ class MenuDrawer extends HTMLElement {
     );
     this.querySelectorAll(
       'button:not(.localization-selector):not(.country-selector__close-button):not(.country-filter__reset-button)'
-    ).forEach((button) => button.addEventListener('click', this.onCloseButtonClick.bind(this))
-    );
+    ).forEach((button) => button.addEventListener('click', this.onCloseButtonClick.bind(this)));
   }
 
   onKeyUp(event) {
@@ -529,6 +528,10 @@ class ModalDialog extends HTMLElement {
   constructor() {
     super();
     this.querySelector('[id^="ModalClose-"]').addEventListener('click', this.hide.bind(this, false));
+    this.body = this.querySelector('.modal-body');
+    this.addEventListener('click', (event) => {
+      if (event.target === this.body) this.hide();
+    });
     this.addEventListener('keyup', (event) => {
       if (event.code.toUpperCase() === 'ESCAPE') this.hide();
     });
@@ -552,7 +555,7 @@ class ModalDialog extends HTMLElement {
   show(opener) {
     this.openedBy = opener;
     const popup = this.querySelector('.template-popup');
-    document.body.classList.add('overflow-hidden');
+    disableScroll();
     this.setAttribute('open', '');
     if (popup) popup.loadContent();
     trapFocus(this, this.querySelector('[role="dialog"]'));
@@ -560,7 +563,7 @@ class ModalDialog extends HTMLElement {
   }
 
   hide() {
-    document.body.classList.remove('overflow-hidden');
+    enableScroll();
     document.body.dispatchEvent(new CustomEvent('modalClosed'));
     this.removeAttribute('open');
     removeTrapFocus(this.openedBy);
@@ -767,9 +770,7 @@ class SlideshowComponent extends SliderComponent {
       this.autoplayButtonIsSetToPlay = true;
       this.play();
     } else {
-      this.reducedMotion.matches || this.announcementBarArrowButtonWasClicked
-        ? this.pause()
-        : this.play();
+      this.reducedMotion.matches || this.announcementBarArrowButtonWasClicked ? this.pause() : this.play();
     }
   }
 
@@ -833,10 +834,7 @@ class SlideshowComponent extends SliderComponent {
         event.target === this.sliderAutoplayButton || this.sliderAutoplayButton.contains(event.target);
       if (!this.autoplayButtonIsSetToPlay || focusedOnAutoplayButton) return;
       this.play();
-    } else if (
-      !this.reducedMotion.matches &&
-      !this.announcementBarArrowButtonWasClicked
-    ) {
+    } else if (!this.reducedMotion.matches && !this.announcementBarArrowButtonWasClicked) {
       this.play();
     }
   }
@@ -878,9 +876,7 @@ class SlideshowComponent extends SliderComponent {
 
   autoRotateSlides() {
     const slideScrollPosition =
-      this.currentPage === this.sliderItems.length
-        ? 0
-        : this.slider.scrollLeft + this.sliderItemOffset;
+      this.currentPage === this.sliderItems.length ? 0 : this.slider.scrollLeft + this.sliderItemOffset;
 
     this.setSlidePosition(slideScrollPosition);
     this.applyAnimationToAnnouncementBar();
@@ -944,7 +940,7 @@ class SlideshowComponent extends SliderComponent {
     const slideScrollPosition =
       this.slider.scrollLeft +
       this.sliderFirstItemNode.clientWidth *
-      (this.sliderControlLinksArray.indexOf(event.currentTarget) + 1 - this.currentPage);
+        (this.sliderControlLinksArray.indexOf(event.currentTarget) + 1 - this.currentPage);
     this.slider.scrollTo({
       left: slideScrollPosition,
     });
@@ -1114,7 +1110,8 @@ class VariantSelects extends HTMLElement {
     const sectionId = this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section;
 
     fetch(
-      `${this.dataset.url}?variant=${requestedVariantId}&section_id=${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section
+      `${this.dataset.url}?variant=${requestedVariantId}&section_id=${
+        this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section
       }`
     )
       .then((response) => response.text())
@@ -1141,7 +1138,9 @@ class VariantSelects extends HTMLElement {
         );
 
         const pricePerItemDestination = document.getElementById(`Price-Per-Item-${this.dataset.section}`);
-        const pricePerItemSource = html.getElementById(`Price-Per-Item-${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`);
+        const pricePerItemSource = html.getElementById(
+          `Price-Per-Item-${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`
+        );
 
         const volumePricingDestination = document.getElementById(`Volume-${this.dataset.section}`);
         const qtyRules = document.getElementById(`Quantity-Rules-${this.dataset.section}`);
@@ -1171,8 +1170,7 @@ class VariantSelects extends HTMLElement {
 
         if (price) price.classList.remove('hidden');
 
-        if (inventoryDestination)
-          inventoryDestination.classList.toggle('hidden', inventorySource.innerText === '');
+        if (inventoryDestination) inventoryDestination.classList.toggle('hidden', inventorySource.innerText === '');
 
         const addButtonUpdated = html.getElementById(`ProductSubmitButton-${sectionId}`);
         this.toggleAddButton(
@@ -1278,3 +1276,26 @@ class ProductRecommendations extends HTMLElement {
 }
 
 customElements.define('product-recommendations', ProductRecommendations);
+
+const disableScroll = () => {
+  document.body.dataset.scrollY = window.scrollY;
+
+  const scrollWidth = window.innerWidth - document.body.offsetWidth;
+
+  document.body.style.cssText = `
+  overflow: hidden; 
+  position: fixed; 
+  height: 100vh;
+  top: -${window.scrollY}px;
+  left: 0;
+  padding-right: ${scrollWidth}px;
+  width: 100%;
+  `;
+};
+
+const enableScroll = () => {
+  document.body.style.cssText = '';
+  window.scroll({
+    top: document.body.dataset.scrollY,
+  });
+};

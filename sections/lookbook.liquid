@@ -1,0 +1,229 @@
+{{ 'component-card.css' | asset_url | stylesheet_tag }}
+{{ 'component-price.css' | asset_url | stylesheet_tag }}
+{{ 'lookbook.css' | asset_url | stylesheet_tag }}
+{{ 'component-product-variant-picker.css' | asset_url | stylesheet_tag }}
+{{ 'component-swatch.css' | asset_url | stylesheet_tag }}
+{{ 'component-swatch-input.css' | asset_url | stylesheet_tag }}
+
+<div class="lookbook">
+  <div class="lookbook__wrapper">
+    <div
+      class="lookbook__img media media--portrait {% if section.settings.image == blank %}placeholder{% endif %}"
+    >
+      {%- if section.settings.image != blank -%}
+        {{ section.settings.image | image_url: width: null | image_tag }}
+      {%- else -%}
+        {{ 'hero-apparel-1' | placeholder_svg_tag: 'placeholder-svg' }}
+      {%- endif -%}
+    </div>
+    <div class="lookbook__content">
+      {%- assign content = section.blocks | where: 'type', 'content' -%}
+      {%- for block in content -%}
+        <p class="lookbook__text">
+          {{ block.settings.text }}
+        </p>
+      {%- endfor -%}
+    </div>
+  </div>
+
+  {%- assign popups = section.blocks | where: 'type', 'popup' -%}
+  {%- for block in popups -%}
+    <modal-opener data-modal="#PopupModal-{{ block.id }}">
+      <button
+        class="lookbook__button"
+        aria-haspopup="dialog"
+        aria-labelledby="title-{{ section.id }}"
+      >
+        {% render 'icon-plus' %}
+      </button>
+    </modal-opener>
+    <modal-dialog
+      class="lookbook-modal"
+      id="PopupModal-{{ block.id }}"
+    >
+      <div
+        class="lookbook-modal__body modal-body global-settings-popup"
+        role="dialog"
+        aria-label="{{ block.settings.text }}"
+        aria-modal="true"
+        tabindex="-1"
+      >
+        <script src="{{ 'lookbook-form.js' | asset_url }}" defer="defer"></script>
+        <div
+          class="lookbook-modal__content"
+        >
+          <button
+            id="ModalClose-{{ block.id }}"
+            type="button"
+            class="lookbook-modal__close"
+            aria-label="{{ 'accessibility.close' | t }}"
+          >
+            {% render 'icon-close' %}
+          </button>
+
+          <div
+            class="lookbook-modal__wrapper"
+            id="PopupModal-{{ block.id }}"
+          >
+            <div class="lookbook-modal__media">
+              <div class="lookbook-modal__media-img media media--portrait {% if section.settings.image == blank %}placeholder{% endif %}">
+                {%- if section.settings.image != blank -%}
+                  {{ section.settings.image | image_url: width: null | image_tag }}
+                {%- else -%}
+                  {{ 'hero-apparel-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                {%- endif -%}
+              </div>
+            </div>
+            <div class="lookbook-modal__products">
+              {%- if block.settings.collection.products_count > 0 -%}
+                {%- for product in block.settings.collection.products -%}
+                  {%- assign product_form_id = 'product-form-' | append: section.id -%}
+                  {%- form 'product',
+                    product,
+                    id: product_form_id,
+                    class: 'form',
+                    novalidate: 'novalidate',
+                    data-type: 'add-to-cart-form'
+                  -%}
+                    <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+
+                    <div class="lookbook-modal__product lookbook-product">
+                      <div class="lookbook-product__media">
+                        {%- if product.featured_media -%}
+                          <a class="lookbook-product__media-img media media--portrait title-{{ section.id }}">
+                            <img
+                              srcset="{{ product.featured_media | image_url }} {{ product.featured_media.width }}"
+                              src="{{ product.featured_media | image_url: width: 533 }}"
+                              alt="{{ product.featured_media.alt | escape }}"
+                              class="motion-reduce"
+                              width="{{ product.featured_media.width }}"
+                              height="{{ product.featured_media.height }}"
+                            >
+                          </a>
+                        {%- endif -%}
+                      </div>
+
+                      <div class="lookbook-product__content">
+                        <div class="lookbook-product__wrapper">
+                          <div class="lookbook-product__information">
+                            <a class="lookbook-product__title full-unstyled-link" href=" {{ product.url }}">
+                              {{ product.title | escape }}
+                            </a>
+                            <p class="lookbook-product__description rte">{{ product.description }}</p>
+                          </div>
+                          <div class="lookbook-product__prices">
+                            {% render 'price',
+                              product: product,
+                              price_class: 'lookbook-product__price',
+                              show_compare_at_price: false
+                            %}
+                          </div>
+                        </div>
+                        <div class="lookbook-product__bottom">
+                          {%- unless product.has_only_default_variant -%}
+                            <select class="lookbook-product__select" name="id">
+                              {%- for variant in product.variants -%}
+                                <option
+                                  value="{{ variant.id }}"
+                                  {%- unless variant.available -%}
+                                    disabled
+                                  {%- endunless -%}
+                                >
+                                  {{ variant.title }}
+                                  {%- unless variant.available -%}- not available{%- endunless -%}
+                                </option>
+                              {%- endfor -%}
+                            </select>
+                          {%- endunless -%}
+
+                          <button
+                            class="product-form__button lookbook-product__button button button--secondary"
+                            id="ProductSubmitButton-{{ section.id }}"
+                            type="submit"
+                            name="add"
+                            {% if product.selected_or_first_available_variant.available == false %}
+                              disabled
+                            {% endif %}
+                          >
+                            <span>
+                              {%- if product.selected_or_first_available_variant.available == false -%}
+                                {{ 'products.product.sold_out' | t }}
+                              {%- else -%}
+                                {{ 'products.product.add_to_cart' | t }}
+                              {%- endif -%}
+                            </span>
+                            {%- render 'loading-spinner' -%}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  {%- endform -%}
+                {%- endfor -%}
+              {%- else -%}
+                <p>Products not found</p>
+              {%- endif -%}
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal-dialog>
+  {%- endfor -%}
+</div>
+
+{% schema %}
+{
+  "name": "Lookbook",
+  "tag": "section",
+  "class": "section",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Lookbook main image"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "content",
+      "name": "Lookbook content",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "default": "Our latest collection demonstrates an elegant eccentricity – bold patterns inspired by traditional nomadicdressing, embroidered buttons, ceramic detailing and artisanal stitching contrast with stark, clean-lined silhouettes that showcase refined modernity.",
+          "label": "Text"
+        }
+      ]
+    },
+    {
+      "type": "popup",
+      "name": "Lookbook popup",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Products"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Lookbook",
+      "blocks": [
+        {
+          "type": "content"
+        },
+        {
+          "type": "popup"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
